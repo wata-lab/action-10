@@ -1,12 +1,40 @@
 namespace SpriteKind {
     export const 踏んだら死ぬ敵 = SpriteKind.create()
 }
-scene.onOverlapTile(SpriteKind.Player, assets.tile`旗`, function (sprite, location) {
-    tiles.setTileAt(location, assets.tile`transparency16`)
-    respaun_column = 13
-    respaun_row = 10
+scene.onOverlapTile(SpriteKind.Player, assets.tile`チェスト_開いてない`, function (sprite, location) {
+    if (stage == 8) {
+        game.gameOver(true)
+    } else {
+        stage += 1
+        music.setVolume(128)
+        music.play(music.melodyPlayable(music.beamUp), music.PlaybackMode.UntilDone)
+        respaun_column = 0
+        respaun_row = 0
+        init_stage(stage)
+    }
+})
+scene.onOverlapTile(SpriteKind.Player, assets.tile`ドア`, function (sprite, location) {
+    stage = 0
     music.setVolume(128)
-    music.play(music.melodyPlayable(music.buzzer), music.PlaybackMode.InBackground)
+    music.play(music.melodyPlayable(music.beamUp), music.PlaybackMode.InBackground)
+    init_stage(stage)
+})
+scene.onOverlapTile(SpriteKind.Player, assets.tile`きのこタイル1`, function (sprite, location) {
+    tiles.setTileAt(location, assets.tile`transparency16`)
+    info.changeLifeBy(1)
+    music.setVolume(128)
+    music.play(music.melodyPlayable(music.powerUp), music.PlaybackMode.InBackground)
+})
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
+    sprites.destroy(otherSprite)
+    damage()
+})
+sprites.onOverlap(SpriteKind.Player, SpriteKind.踏んだら死ぬ敵, function (sprite, otherSprite) {
+    if (sprite.vy > 0) {
+        sprites.destroy(mySprite4)
+    } else {
+        damage()
+    }
 })
 controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
     if (is_invincible == 0) {
@@ -25,18 +53,20 @@ controller.right.onEvent(ControllerButtonEvent.Pressed, function () {
         )
     }
 })
-sprites.onOverlap(SpriteKind.Player, SpriteKind.踏んだら死ぬ敵, function (sprite, otherSprite) {
-    if (sprite.vy > 0) {
-        sprites.destroy(mySprite4)
-    } else {
-        damage()
-    }
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Projectile, function (sprite, otherSprite) {
+    sprites.destroy(otherSprite)
+    damage()
 })
 scene.onOverlapTile(SpriteKind.Player, assets.tile`ダイヤモンド`, function (sprite, location) {
     tiles.setTileAt(location, assets.tile`transparency16`)
     info.changeScoreBy(1)
     music.setVolume(128)
     music.play(music.melodyPlayable(music.baDing), music.PlaybackMode.InBackground)
+})
+controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
+    if (mySprite.isHittingTile(CollisionDirection.Bottom)) {
+        mySprite.vy = -200
+    }
 })
 scene.onOverlapTile(SpriteKind.Player, assets.tile`レバー_左`, function (sprite, location) {
     music.setVolume(128)
@@ -47,6 +77,13 @@ scene.onOverlapTile(SpriteKind.Player, assets.tile`レバー_左`, function (spr
         tiles.setTileAt(tiles.getTileLocation(k, 13), assets.tile`transparency16`)
         tiles.setWallAt(tiles.getTileLocation(k, 13), false)
         k += 1
+    }
+})
+scene.onOverlapTile(SpriteKind.Player, assets.tile`シルバーフィッシュ_生きてる_左_タイル`, function (sprite, location) {
+    if (sprite.vy > 0 || is_invincible == 1) {
+        tiles.setTileAt(location, assets.tile`シルバーフィッシュ_踏まれた_左_タイル`)
+    } else {
+        damage()
     }
 })
 scene.onOverlapTile(SpriteKind.Player, assets.tile`アイテムブロック3`, function (sprite, location) {
@@ -70,22 +107,15 @@ controller.left.onEvent(ControllerButtonEvent.Pressed, function () {
         )
     }
 })
-sprites.onOverlap(SpriteKind.Player, SpriteKind.Projectile, function (sprite, otherSprite) {
-    sprites.destroy(otherSprite)
-    damage()
-})
-scene.onOverlapTile(SpriteKind.Player, assets.tile`チェスト_開いてない`, function (sprite, location) {
-    if (stage == 8) {
-        game.gameOver(true)
-    } else {
-        stage += 1
-        music.setVolume(128)
-        music.play(music.melodyPlayable(music.beamUp), music.PlaybackMode.UntilDone)
-        respaun_column = 0
-        respaun_row = 0
-        init_stage(stage)
-    }
-})
+function get_item (column: number, row: number) {
+    mySprite2 = sprites.create(assets.image`きのこ`, SpriteKind.Player)
+    mySprite2.vy = -100
+    tiles.placeOnTile(mySprite2, tiles.getTileLocation(column, row))
+    mySprite2.setFlag(SpriteFlag.AutoDestroy, true)
+    info.changeLifeBy(1)
+    music.setVolume(128)
+    music.play(music.melodyPlayable(music.powerUp), music.PlaybackMode.InBackground)
+}
 scene.onOverlapTile(SpriteKind.Player, assets.tile`きのこタイル2`, function (sprite, location) {
     tiles.setTileAt(location, assets.tile`transparency16`)
     is_invincible = 1
@@ -97,27 +127,6 @@ scene.onOverlapTile(SpriteKind.Player, assets.tile`きのこタイル2`, functio
     )
     music.setVolume(128)
     music.play(music.melodyPlayable(music.magicWand), music.PlaybackMode.LoopingInBackground)
-})
-scene.onOverlapTile(SpriteKind.Player, assets.tile`ドア`, function (sprite, location) {
-    stage = 0
-    music.setVolume(128)
-    music.play(music.melodyPlayable(music.beamUp), music.PlaybackMode.InBackground)
-    init_stage(stage)
-})
-function get_item (column: number, row: number) {
-    mySprite2 = sprites.create(assets.image`きのこ`, SpriteKind.Player)
-    mySprite2.vy = -100
-    tiles.placeOnTile(mySprite2, tiles.getTileLocation(column, row))
-    mySprite2.setFlag(SpriteFlag.AutoDestroy, true)
-    info.changeLifeBy(1)
-    music.setVolume(128)
-    music.play(music.melodyPlayable(music.powerUp), music.PlaybackMode.InBackground)
-}
-scene.onOverlapTile(SpriteKind.Player, assets.tile`きのこタイル1`, function (sprite, location) {
-    tiles.setTileAt(location, assets.tile`transparency16`)
-    info.changeLifeBy(1)
-    music.setVolume(128)
-    music.play(music.melodyPlayable(music.powerUp), music.PlaybackMode.InBackground)
 })
 function init_stage (stage: number) {
     if (stage != 100) {
@@ -544,7 +553,7 @@ function init_stage (stage: number) {
     } else if (stage == 8) {
         sprites.destroy(mySprite4)
         tiles.setCurrentTilemap(tilemap`レベル_9`)
-        tiles.placeOnTile(mySprite, tiles.getTileLocation(1, 8))
+        tiles.placeOnTile(mySprite, tiles.getTileLocation(2, 9))
         scene.setBackgroundColor(6)
         scene.setBackgroundImage(assets.image`背景`)
     }
@@ -552,6 +561,13 @@ function init_stage (stage: number) {
         tiles.placeOnTile(mySprite, tiles.getTileLocation(respaun_column, respaun_row))
     }
 }
+scene.onOverlapTile(SpriteKind.Player, assets.tile`旗`, function (sprite, location) {
+    tiles.setTileAt(location, assets.tile`transparency16`)
+    respaun_column = 13
+    respaun_row = 10
+    music.setVolume(128)
+    music.play(music.melodyPlayable(music.buzzer), music.PlaybackMode.InBackground)
+})
 function damage () {
     if ((game.runtime() - damage_time > 1000 || damage_time == 0) && is_invincible == 0) {
         damage_time = game.runtime()
@@ -569,22 +585,6 @@ function damage () {
         init_stage(stage)
     }
 }
-scene.onOverlapTile(SpriteKind.Player, assets.tile`シルバーフィッシュ_生きてる_左_タイル`, function (sprite, location) {
-    if (sprite.vy > 0 || is_invincible == 1) {
-        tiles.setTileAt(location, assets.tile`シルバーフィッシュ_踏まれた_左_タイル`)
-    } else {
-        damage()
-    }
-})
-sprites.onOverlap(SpriteKind.Player, SpriteKind.Enemy, function (sprite, otherSprite) {
-    sprites.destroy(otherSprite)
-    damage()
-})
-controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (mySprite.isHittingTile(CollisionDirection.Bottom)) {
-        mySprite.vy = -200
-    }
-})
 let projectile: Sprite = null
 let l = 0
 let i = 0
@@ -595,22 +595,22 @@ let mySprite3: Sprite = null
 let j = 0
 let mySprite2: Sprite = null
 let k = 0
-let mySprite4: Sprite = null
 let is_invincible = 0
+let mySprite4: Sprite = null
 let respaun_row = 0
 let respaun_column = 0
 let mySprite: Sprite = null
 let stage = 0
 info.setScore(0)
 info.setLife(3)
-stage = 100
+stage = 8
 mySprite = sprites.create(assets.image`いぬたぬき_右`, SpriteKind.Player)
 controller.moveSprite(mySprite, 100, 0)
 mySprite.ay = 500
 scene.cameraFollowSprite(mySprite)
 init_stage(stage)
-music.setVolume(64)
-music.play(music.createSong(assets.song`かみきょく`), music.PlaybackMode.LoopingInBackground)
+music.setVolume(128)
+music.play(music.createSong(hex`0000010408010109010e02026400000403780000040a000301000000640001c80000040100000000640001640000040100000000fa0004af00000401c80000040a00019600000414000501006400140005010000002c0104dc00000401fa0000040a0001c8000004140005d0076400140005d0070000c800029001f40105c201f4010a0005900114001400039001000005c201f4010500058403050032000584030000fa00049001000005c201f4010500058403c80032000584030500640005840300009001049001000005c201f4010500058403c80064000584030500c8000584030000f40105ac0d000404a00f00000a0004ac0d2003010004a00f0000280004ac0d9001010004a00f0000280002d00700040408070f0064000408070000c80003c800c8000e7d00c80019000e64000f0032000e78000000fa00032c01c8000ee100c80019000ec8000f0032000edc000000fa0003f401c8000ea901c80019000e90010f0032000ea4010000fa0001c8000004014b000000c800012c01000401c8000000c8000190010004012c010000c80002c800000404c8000f0064000496000000c80002c2010004045e010f006400042c010000640002c409000404c4096400960004f6090000f40102b80b000404b80b64002c0104f40b0000f401022003000004200300040a000420030000ea01029001000004900100040a000490010000900102d007000410d0076400960010d0070000c8003c000000010001060800090001060a000b0001060c000d0001060e000f0001051000110001061400150001051600170001051a001b0001051c001d000106`), music.PlaybackMode.LoopingInBackground)
 game.onUpdate(function () {
     if (mySprite.tileKindAt(TileDirection.Bottom, assets.tile`バネ`)) {
         mySprite.vy = -350
